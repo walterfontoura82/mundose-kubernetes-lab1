@@ -1,0 +1,95 @@
+Como en tu LAB2 también tenés un Service, el flujo completo sería:
+
+cd "C:\Users\Waly\Desktop\MundosE2026\ClaseKuberneteII\LAB2"
+kubectl apply -f deploy-base.yml
+kubectl apply -f service-base.yml
+Después validás estado:
+
+kubectl get deployments
+kubectl get pods
+kubectl get services
+Qué va a crear cada archivo:
+
+deploy-base.yml: un Deployment llamado web-d con 6 réplicas.
+service-base.yml: un Service NodePort llamado web-svc en el puerto 30088.
+Para comprobar que quedó bien:
+
+kubectl describe deployment web-d
+kubectl get pods -l app=web
+kubectl get svc web-svc
+Si estás en Minikube y querés abrirlo, podés usar:
+
+minikube service web-svc
+o ver la URL con:
+
+minikube service web-svc --url
+Tu Service expone nodePort: 30088, así que también podrías probar con la IP de Minikube:
+
+minikube ip
+y luego abrir:
+
+http://<IP_DE_MINIKUBE>:30088
+Si querés, el siguiente paso te lo doy exacto para este LAB: apply, check, y abrir en navegador.
+
+
+
+
+
+8:46 AM
+me podes hacer un grafico de como quedaría el esquema?
+8:55 AM
+
+
+Sí. Con esos dos archivos, el esquema te queda así:
+
+                    kubectl apply
+                         |
+                         v
+                 +----------------+
+                 | Deployment web-d |
+                 | replicas: 6      |
+                 +----------------+
+                         |
+                         v
+      +---------+---------+---------+---------+---------+---------+
+      |         |         |         |         |         |         |
+      v         v         v         v         v         v
+   +------+  +------+  +------+  +------+  +------+  +------+
+   | Pod  |  | Pod  |  | Pod  |  | Pod  |  | Pod  |  | Pod  |
+   | web  |  | web  |  | web  |  | web  |  | web  |  | web  |
+   | :80  |  | :80  |  | :80  |  | :80  |  | :80  |  | :80  |
+   +------+  +------+  +------+  +------+  +------+  +------+
+      ^         ^         ^         ^         ^         ^
+      |         |         |         |         |         |
+      +---------+---------+---------+---------+---------+
+                         |
+                  label: app=web
+                         |
+                         v
+                 +----------------+
+                 | Service web-svc |
+                 | type: NodePort  |
+                 | port: 80        |
+                 | nodePort:30088  |
+                 +----------------+
+                         |
+                         v
+              http://<minikube-ip>:30088
+Versión conceptual:
+
+Deployment web-d
+crea y mantiene 6 Pods.
+Cada Pod corre el contenedor:
+maldoariel/miapp-server:v1
+Todos los Pods tienen la label:
+app: web
+Service web-svc
+busca los Pods con selector: app=web
+El Service expone el puerto 80
+hacia afuera por NodePort 30088
+En resumen:
+
+afuera entrás por 30088
+el Service recibe el tráfico
+el Service balancea entre los 6 Pods
+cada Pod escucha en containerPort: 80
