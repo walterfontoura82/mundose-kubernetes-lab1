@@ -1,0 +1,744 @@
+Bienvenido a Kubernetes - Fundamentos y Arquitectura
+🎯 Objetivos del Laboratorio
+En este laboratorio aprenderás:
+
+✅ Arquitectura de Kubernetes - Componentes principales del clúster
+✅ Pods - La unidad básica de despliegue
+✅ Deployments - Gestión de aplicaciones escalables
+✅ Servicios - Comunicación entre componentes
+✅ kubectl - Comandos esenciales para administrar el clúster
+
+🚀 ¿Qué es Kubernetes?
+Kubernetes (K8s) es una plataforma de orquestación de contenedores que automatiza el despliegue, escalado y gestión de aplicaciones en contenedores.
+
+¿Por qué usar Kubernetes?
+🌐 Escalabilidad automática - Ajusta recursos según demanda
+🔄 Auto-reparación - Reinicia contenedores fallidos automáticamente
+⚖️ Balanceo de carga - Distribuye tráfico entre múltiples instancias
+🔄 Actualizaciones sin interrupción - Despliega nuevas versiones sin downtime
+📦 Gestión de configuración - Separa código de configuración
+
+🏗️ Lo que construirás
+Durante este laboratorio:
+
+Explorarás la arquitectura del clúster de Kubernetes
+Crearás tu primer pod y verás cómo funciona
+Desplegarás una aplicación usando deployments
+Expondrás la aplicación usando servicios
+Dominarás los comandos básicos de kubectl
+⏱️ Duración estimada: 45-50 minutos
+¡Comencemos a descubrir el poder de Kubernetes! 🚀
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Arquitectura y Componentes de Kubernetes
+🏗️ Entendiendo la Arquitectura
+Kubernetes funciona con una arquitectura maestro-trabajador donde el Control Plane gestiona el clúster y los Nodos ejecutan las aplicaciones.
+
+📊 Estado del Clúster
+echo "🔍 Ver información general del clúster:"
+kubectl cluster-info
+echo "📋 Ver todos los nodos del clúster:"
+kubectl get nodes -o wide
+echo "📊 Ver estado detallado de los nodos:"
+kubectl describe nodes
+🎛️ Componentes del Control Plane
+echo "🔍 Ver pods del sistema en kube-system:"
+kubectl get pods -n kube-system
+echo "📋 Componentes clave del Control Plane:"
+echo ""
+echo "🧠 kube-apiserver     → API central de Kubernetes"
+echo "🗄️  etcd              → Base de datos del clúster"
+echo "🎯 kube-scheduler     → Asigna pods a nodos"
+echo "🎮 kube-controller    → Gestiona estado deseado"
+echo "🌐 kube-proxy        → Gestiona red y servicios"
+echo "🐳 kubelet           → Agente en cada nodo"
+🔍 Explorar Componentes en Detalle
+echo "📊 Ver detalles del API Server:"
+kubectl get pods -n kube-system -l component=kube-apiserver -o wide
+echo "🗄️ Ver estado de etcd:"
+kubectl get pods -n kube-system -l component=etcd -o wide
+echo "🎯 Ver el scheduler:"
+kubectl get pods -n kube-system -l component=kube-scheduler -o wide
+🌐 Namespaces: Organización del Clúster
+echo "📂 Ver todos los namespaces:"
+kubectl get namespaces
+echo "📋 Describir el namespace default:"
+kubectl describe namespace default
+echo "🏷️ Crear un namespace para nuestros experimentos:"
+kubectl create namespace mi-laboratorio
+echo "✅ Verificar que se creó:"
+kubectl get namespaces | grep mi-laboratorio
+🔧 Recursos y API Objects
+echo "📋 Ver todos los tipos de recursos disponibles:"
+kubectl api-resources | head -20
+echo "🔍 Ver recursos específicos (pods, services, deployments):"
+kubectl api-resources | grep -E "(pods|services|deployments)"
+📊 Estado de Recursos del Clúster
+echo "📈 Ver uso de recursos en nodos:"
+kubectl top nodes 2>/dev/null || echo "Metrics server no disponible en este entorno"
+echo "🔍 Ver todos los recursos en todos los namespaces:"
+kubectl get all --all-namespaces | head -15
+🎯 Conceptos Clave Aprendidos
+echo "🏗️ === ARQUITECTURA KUBERNETES ==="
+echo ""
+echo "🎛️ Control Plane (Master):"
+echo "   • API Server  → Punto de entrada al clúster"
+echo "   • etcd        → Almacena estado del clúster"
+echo "   • Scheduler   → Decide dónde ejecutar pods"
+echo "   • Controller  → Mantiene estado deseado"
+echo ""
+echo "👷 Worker Nodes:"
+echo "   • kubelet     → Gestiona pods en el nodo"
+echo "   • kube-proxy  → Gestiona reglas de red"
+echo "   • Container Runtime → Ejecuta contenedores"
+echo ""
+echo "📂 Namespaces:"
+echo "   • Aíslan recursos y aplicaciones"
+echo "   • Permiten multi-tenancy"
+echo "   • Facilitan organización"
+echo ""
+echo "🚀 ¡Ahora entiendes cómo funciona Kubernetes por dentro!"
+En el siguiente paso crearás tu primer pod y verás Kubernetes en acción.
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Tu Primer Pod en Kubernetes
+🎯 ¿Qué es un Pod?
+Un Pod es la unidad más pequeña de despliegue en Kubernetes. Generalmente contiene un contenedor, pero puede tener múltiples contenedores que trabajan juntos.
+
+🚀 Crear tu Primer Pod
+echo "🐳 Crear un pod simple con nginx:"
+kubectl run mi-primer-pod --image=nginx:alpine
+echo "📋 Ver el estado del pod:"
+kubectl get pods
+echo "⏱️ Esperar a que el pod esté listo:"
+kubectl wait --for=condition=ready pod mi-primer-pod --timeout=60s
+echo "✅ Verificar que está corriendo:"
+kubectl get pods -o wide
+🔍 Inspeccionar el Pod
+echo "📊 Ver detalles completos del pod:"
+kubectl describe pod mi-primer-pod
+echo "📋 Ver logs del pod:"
+kubectl logs mi-primer-pod
+echo "🌐 Ver en qué nodo está ejecutándose:"
+kubectl get pod mi-primer-pod -o jsonpath='{.spec.nodeName}'
+echo ""
+🔧 Interactuar con el Pod
+echo "💻 Ejecutar comandos dentro del pod:"
+kubectl exec mi-primer-pod -- nginx -v
+echo "🔍 Ver procesos corriendo en el pod:"
+kubectl exec mi-primer-pod -- ps aux
+echo "📂 Explorar el sistema de archivos:"
+kubectl exec mi-primer-pod -- ls -la /usr/share/nginx/html/
+🌐 Acceder al Pod
+echo "🔌 Crear un port-forward para acceder al pod:"
+kubectl port-forward mi-primer-pod 8080:80 --address=0.0.0.0 &
+sleep 2
+echo "🌍 Probar el servidor web:"
+curl -s http://localhost:8080 | head -5
+echo "⏹️ Detener port-forward:"
+pkill -f "kubectl port-forward"
+📝 Crear Pod con YAML
+echo "📝 Crear un archivo YAML para definir un pod:"
+cat > mi-pod.yaml << 'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mi-pod-yaml
+  labels:
+    app: mi-aplicacion
+    tier: frontend
+spec:
+  containers:
+  - name: web-container
+    image: nginx:alpine
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+EOF
+echo "🚀 Aplicar el YAML:"
+kubectl apply -f mi-pod.yaml
+echo "📋 Ver ambos pods:"
+kubectl get pods -l app=mi-aplicacion -o wide
+🏷️ Trabajar con Labels
+echo "🏷️ Ver pods con sus labels:"
+kubectl get pods --show-labels
+echo "🔍 Filtrar pods por label:"
+kubectl get pods -l app=mi-aplicacion
+echo "➕ Añadir un label al primer pod:"
+kubectl label pod mi-primer-pod version=v1
+echo "📋 Ver pods con el nuevo label:"
+kubectl get pods --show-labels
+📊 Monitoreo del Pod
+echo "📈 Ver uso de recursos del pod:"
+kubectl top pod mi-pod-yaml 2>/dev/null || echo "Metrics no disponibles"
+echo "🔍 Ver eventos relacionados con nuestros pods:"
+kubectl get events --field-selector involvedObject.name=mi-primer-pod
+🗑️ Eliminar Pods
+echo "🗑️ Eliminar el primer pod:"
+kubectl delete pod mi-primer-pod
+echo "📋 Verificar que se eliminó:"
+kubectl get pods
+echo "📝 Mantener el pod creado con YAML para el siguiente paso:"
+kubectl get pods
+🎯 Conceptos Clave de Pods
+echo "🐳 === CONCEPTOS DE PODS ==="
+echo ""
+echo "📦 ¿Qué es un Pod?"
+echo "   • Unidad mínima de despliegue"
+echo "   • Agrupa uno o más contenedores"
+echo "   • Comparten red y almacenamiento"
+echo "   • Efímeros (temporales)"
+echo ""
+echo "🏷️ Labels y Selectors:"
+echo "   • Organizan y filtran recursos"
+echo "   • key=value pairs"
+echo "   • Permiten consultas flexibles"
+echo ""
+echo "📊 Estados del Pod:"
+echo "   • Pending    → Esperando asignación"
+echo "   • Running    → Ejecutándose"
+echo "   • Succeeded  → Completado exitosamente"
+echo "   • Failed     → Falló en ejecución"
+echo ""
+echo "🚀 ¡Ya dominas los conceptos básicos de Pods!"
+En el siguiente paso aprenderás sobre Deployments para gestionar aplicaciones de forma más robusta.
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Deployments: Gestión de Aplicaciones
+🎯 ¿Por qué Deployments?
+Los Deployments proporcionan funcionalidades avanzadas que los Pods simples no tienen:
+
+Escalado automático
+Actualizaciones sin interrupción
+Auto-reparación (reinicia pods fallidos)
+Historial de versiones
+🚀 Crear tu Primer Deployment
+echo "🧹 Limpiar pods anteriores:"
+kubectl delete -f mi-pod.yaml 2>/dev/null || echo "Pod ya eliminado"
+echo "🚀 Crear deployment con nginx:"
+kubectl create deployment mi-app --image=nginx:alpine
+echo "📋 Ver el deployment:"
+kubectl get deployment mi-app
+echo "📦 Ver pods creados por el deployment:"
+kubectl get pods -l app=mi-app
+📈 Escalado de Aplicaciones
+echo "📈 Escalar a 3 replicas:"
+kubectl scale deployment mi-app --replicas=3
+echo "⏱️ Esperar a que todas las replicas estén listas:"
+kubectl wait --for=condition=available deployment mi-app --timeout=60s
+echo "📊 Ver el estado del escalado:"
+kubectl get deployment mi-app
+kubectl get pods -l app=mi-app -o wide
+🔄 Auto-reparación en Acción
+echo "💥 Simular falla eliminando un pod:"
+POD_NAME=$(kubectl get pods -l app=mi-app -o jsonpath='{.items[0].metadata.name}')
+echo "Eliminando pod: $POD_NAME"
+kubectl delete pod $POD_NAME
+echo "⏱️ Ver cómo Kubernetes crea un nuevo pod automáticamente:"
+sleep 3
+kubectl get pods -l app=mi-app
+echo "📊 Ver eventos del deployment:"
+kubectl describe deployment mi-app | tail -10
+📝 Deployment con YAML Avanzado
+echo "📝 Crear un deployment más completo con YAML:"
+cat > mi-deployment.yaml << 'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+        version: v1
+    spec:
+      containers:
+      - name: webapp
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+EOF
+echo "🚀 Aplicar el deployment:"
+kubectl apply -f mi-deployment.yaml
+echo "📋 Ver ambos deployments:"
+kubectl get deployments
+echo "📦 Ver todos los pods:"
+kubectl get pods -o wide
+🔄 Actualización de Aplicación
+echo "🔄 Actualizar la imagen del deployment:"
+kubectl set image deployment/webapp-deployment webapp=nginx:1.21-alpine
+echo "⏱️ Ver el progreso de la actualización:"
+kubectl rollout status deployment/webapp-deployment
+echo "📊 Ver la estrategia de rolling update:"
+kubectl describe deployment webapp-deployment | grep -A 10 "RollingUpdateStrategy"
+📚 Historial de Despliegues
+echo "📚 Ver historial de rollouts:"
+kubectl rollout history deployment/webapp-deployment
+echo "🔙 Hacer rollback a la versión anterior:"
+kubectl rollout undo deployment/webapp-deployment
+echo "⏱️ Ver el rollback en progreso:"
+kubectl rollout status deployment/webapp-deployment
+echo "✅ Verificar que volvió a la versión anterior:"
+kubectl describe deployment webapp-deployment | grep Image
+📊 Monitoreo y Estado
+echo "📊 Ver estado detallado de los deployments:"
+kubectl get deployments -o wide
+echo "🔍 Ver ReplicaSets (creados por deployments):"
+kubectl get replicasets
+echo "📋 Ver la relación deployment → replicaset → pods:"
+kubectl get all -l app=webapp
+⚖️ Escalado Avanzado
+echo "📈 Escalar webapp-deployment a 4 replicas:"
+kubectl scale deployment webapp-deployment --replicas=4
+echo "📊 Ver la distribución de pods en nodos:"
+kubectl get pods -l app=webapp -o wide
+echo "⬇️ Escalar hacia abajo a 1 replica:"
+kubectl scale deployment webapp-deployment --replicas=1
+echo "⏱️ Ver cómo se terminan los pods extra:"
+kubectl get pods -l app=webapp -w &
+sleep 10
+pkill -f "kubectl get pods.*-w"
+🎯 Conceptos Clave de Deployments
+echo "🚀 === CONCEPTOS DE DEPLOYMENTS ==="
+echo ""
+echo "📦 Deployment vs Pod:"
+echo "   • Pod     → Instancia individual"
+echo "   • Deployment → Gestión de múltiples pods"
+echo ""
+echo "🔄 Funcionalidades clave:"
+echo "   • Escalado horizontal automático"
+echo "   • Rolling updates sin downtime"
+echo "   • Auto-healing (pods fallidos)"
+echo "   • Rollback automático"
+echo ""
+echo "📊 Componentes:"
+echo "   • Deployment → Define estado deseado"
+echo "   • ReplicaSet → Gestiona replicas"
+echo "   • Pods       → Ejecutan la aplicación"
+echo ""
+echo "🎯 Estrategias de actualización:"
+echo "   • RollingUpdate → Actualización gradual"
+echo "   • Recreate     → Recrear todos los pods"
+echo ""
+echo "🚀 ¡Ahora puedes gestionar aplicaciones robustas!"
+En el siguiente paso aprenderás sobre Servicios para exponer y comunicar tus aplicaciones.
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+Servicios: Comunicación entre Pods
+🌐 ¿Por qué necesitamos Servicios?
+Los Servicios resuelven problemas fundamentales:
+
+IPs dinámicas - Los pods cambian de IP al reiniciarse
+Balanceo de carga - Distribuir tráfico entre múltiples pods
+Descubrimiento - Encontrar y comunicarse con otros servicios
+Acceso externo - Exponer aplicaciones fuera del clúster
+🔍 Problema: IPs Dinámicas
+echo "🔍 Ver IPs actuales de nuestros pods:"
+kubectl get pods -l app=webapp -o wide
+echo "💥 Eliminar un pod y ver cómo cambia su IP:"
+POD_NAME=$(kubectl get pods -l app=webapp -o jsonpath='{.items[0].metadata.name}')
+echo "IP antes de eliminar:"
+kubectl get pod $POD_NAME -o jsonpath='{.status.podIP}'
+echo ""
+kubectl delete pod $POD_NAME
+echo "⏱️ Esperar a que se cree el nuevo pod:"
+sleep 5
+kubectl get pods -l app=webapp -o wide
+echo "¡La IP cambió! Por eso necesitamos servicios."
+🚀 Crear tu Primer Servicio
+echo "🌐 Crear un servicio ClusterIP (interno):"
+kubectl expose deployment webapp-deployment --port=80 --target-port=80 --name=webapp-service
+echo "📋 Ver el servicio creado:"
+kubectl get service webapp-service
+echo "🔍 Ver detalles del servicio:"
+kubectl describe service webapp-service
+🧪 Probar el Servicio
+echo "🌐 Obtener la IP del servicio:"
+SERVICE_IP=$(kubectl get service webapp-service -o jsonpath='{.spec.clusterIP}')
+echo "IP del servicio: $SERVICE_IP"
+echo "🔗 Probar conectividad al servicio:"
+curl -s http://$SERVICE_IP | head -3
+echo "🎯 Probar balanceo de carga - múltiples requests:"
+for i in {1..5}; do
+  echo "Request $i:"
+  curl -s http://$SERVICE_IP | grep -i "welcome" || echo "Conectado al servicio"
+done
+📝 Servicio con YAML
+echo "📝 Crear un servicio más completo con YAML:"
+cat > mi-servicio.yaml << 'EOF'
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service-yaml
+  labels:
+    app: webapp
+spec:
+  selector:
+    app: webapp
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 80
+    name: http
+  type: ClusterIP
+EOF
+echo "🚀 Aplicar el servicio:"
+kubectl apply -f mi-servicio.yaml
+echo "📋 Ver ambos servicios:"
+kubectl get services
+🌍 Servicio NodePort (Acceso Externo)
+echo "🌍 Crear un servicio NodePort para acceso externo:"
+cat > nodeport-service.yaml << 'EOF'
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-nodeport
+spec:
+  selector:
+    app: webapp
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30080
+  type: NodePort
+EOF
+echo "🚀 Aplicar el servicio NodePort:"
+kubectl apply -f nodeport-service.yaml
+echo "📋 Ver el servicio NodePort:"
+kubectl get service webapp-nodeport
+echo "🌐 Probar acceso externo:"
+curl -s http://localhost:30080 | head -3
+🔍 Endpoints: La Conexión Real
+echo "🔗 Ver endpoints del servicio:"
+kubectl get endpoints webapp-service
+echo "📊 Ver detalles de los endpoints:"
+kubectl describe endpoints webapp-service
+echo "🎯 Comparar IPs de pods vs endpoints:"
+echo "IPs de pods:"
+kubectl get pods -l app=webapp -o jsonpath='{.items[*].status.podIP}'
+echo ""
+echo "IPs en endpoints:"
+kubectl get endpoints webapp-service -o jsonpath='{.subsets[*].addresses[*].ip}'
+echo ""
+🧪 Descubrimiento de Servicios (DNS)
+echo "🧪 Crear un pod temporal para probar DNS:"
+kubectl run test-pod --image=alpine --rm -it --restart=Never -- sh -c "
+  apk add curl &&
+  echo 'Probando DNS interno:' &&
+  curl -s http://webapp-service.default.svc.cluster.local | head -3 &&
+  echo 'DNS funciona correctamente!'
+" || echo "Test completado"
+echo "🔍 Probar diferentes formas de DNS:"
+kubectl run dns-test --image=busybox --rm -it --restart=Never -- sh -c "
+  echo 'Forma corta: webapp-service' &&
+  nslookup webapp-service &&
+  echo 'Forma completa: webapp-service.default.svc.cluster.local' &&
+  nslookup webapp-service.default.svc.cluster.local
+" || echo "DNS test completado"
+⚖️ Balanceo de Carga en Acción
+echo "📈 Escalar a 3 replicas para ver balanceo:"
+kubectl scale deployment webapp-deployment --replicas=3
+kubectl wait --for=condition=available deployment webapp-deployment --timeout=60s
+echo "🔄 Probar balanceo de carga con múltiples pods:"
+echo "Enviando 10 requests al servicio..."
+for i in {1..10}; do
+  echo "Request $i → $(curl -s http://$SERVICE_IP | grep -o 'Welcome.*' | head -1)"
+done
+🏷️ Servicios con Labels y Selectors
+echo "🏷️ Ver cómo el servicio selecciona pods:"
+kubectl get service webapp-service -o yaml | grep -A 3 selector
+echo "📋 Ver pods que coinciden con el selector:"
+kubectl get pods -l app=webapp --show-labels
+echo "🧪 Añadir un label diferente a un pod:"
+POD_NAME=$(kubectl get pods -l app=webapp -o jsonpath='{.items[0].metadata.name}')
+kubectl label pod $POD_NAME test=ejemplo
+kubectl get pod $POD_NAME --show-labels
+🗑️ Limpieza de Servicios
+echo "🗑️ Listar todos los servicios:"
+kubectl get services
+echo "🧹 Eliminar servicios de prueba:"
+kubectl delete service webapp-service-yaml
+kubectl delete service webapp-nodeport
+echo "📋 Mantener el servicio principal:"
+kubectl get services
+🎯 Conceptos Clave de Servicios
+echo "🌐 === CONCEPTOS DE SERVICIOS ==="
+echo ""
+echo "🎯 Tipos de Servicios:"
+echo "   • ClusterIP  → Acceso interno únicamente"
+echo "   • NodePort   → Acceso externo via puerto del nodo"
+echo "   • LoadBalancer → Balanceador externo (nube)"
+echo "   • ExternalName → Alias DNS para servicios externos"
+echo ""
+echo "🔗 Componentes clave:"
+echo "   • Selector   → Encuentra pods por labels"
+echo "   • Endpoints  → IPs reales de pods"
+echo "   • Ports      → Mapeo de puertos"
+echo ""
+echo "🌐 Descubrimiento DNS:"
+echo "   • service-name"
+echo "   • service-name.namespace"
+echo "   • service-name.namespace.svc.cluster.local"
+echo ""
+echo "⚖️ Balanceo de carga:"
+echo "   • Distribución automática de tráfico"
+echo "   • Health checks integrados"
+echo "   • Failover automático"
+echo ""
+echo "🚀 ¡Ya puedes conectar y exponer aplicaciones!"
+En el siguiente paso dominarás kubectl, tu herramienta principal para gestionar Kubernetes.
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+kubectl: Tu Herramienta Principal
+🛠️ kubectl: El Cuchillo Suizo de Kubernetes
+kubectl es tu interfaz principal para interactuar con Kubernetes. Dominar sus comandos te hará más eficiente gestionando clústeres.
+
+📚 Comandos Fundamentales
+echo "🔍 === COMANDOS DE INFORMACIÓN ==="
+echo ""
+kubectl version --short
+kubectl cluster-info
+kubectl config view --minify
+echo "📋 === COMANDOS DE LISTADO ==="
+echo ""
+echo "Ver recursos básicos:"
+kubectl get nodes
+kubectl get namespaces
+kubectl get pods
+kubectl get services
+kubectl get deployments
+🎯 Filtros y Formatos de Salida
+echo "🏷️ === FILTROS POR LABELS ==="
+kubectl get pods -l app=webapp
+kubectl get pods -l app=webapp,version=v1
+kubectl get all -l app=webapp
+echo "📊 === FORMATOS DE SALIDA ==="
+echo ""
+echo "Salida amplia:"
+kubectl get pods -o wide
+echo ""
+echo "Salida JSON:"
+kubectl get pod $(kubectl get pods -l app=webapp -o jsonpath='{.items[0].metadata.name}') -o json | head -20
+echo ""
+echo "Salida YAML:"
+kubectl get service webapp-service -o yaml | head -15
+echo "🔍 === CONSULTAS CON JSONPATH ==="
+echo ""
+echo "Nombres de pods:"
+kubectl get pods -l app=webapp -o jsonpath='{.items[*].metadata.name}'
+echo ""
+echo "IPs de pods:"
+kubectl get pods -l app=webapp -o jsonpath='{.items[*].status.podIP}'
+echo ""
+echo "Nodos de pods:"
+kubectl get pods -l app=webapp -o jsonpath='{.items[*].spec.nodeName}'
+echo ""
+📝 Gestión de Recursos
+echo "📝 === CREACIÓN DE RECURSOS ==="
+echo ""
+echo "Crear desde CLI:"
+kubectl create deployment test-deploy --image=nginx:alpine
+echo ""
+echo "Crear desde archivo:"
+echo "apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  containers:
+  - name: test
+    image: busybox
+    command: ['sleep', '3600']" | kubectl apply -f -
+echo "📊 Ver recursos creados:"
+kubectl get deployments test-deploy
+kubectl get pod test-pod
+echo "🗑️ === ELIMINACIÓN DE RECURSOS ==="
+kubectl delete deployment test-deploy
+kubectl delete pod test-pod
+🔍 Inspección y Debugging
+echo "🔍 === INSPECCIÓN DETALLADA ==="
+echo ""
+echo "Describir un pod:"
+kubectl describe pod $(kubectl get pods -l app=webapp -o jsonpath='{.items[0].metadata.name}')
+echo "📋 === LOGS Y EVENTOS ==="
+echo ""
+echo "Ver logs:"
+kubectl logs -l app=webapp --tail=5
+echo ""
+echo "Ver eventos:"
+kubectl get events --sort-by=.metadata.creationTimestamp | tail -5
+echo "💻 === EJECUTAR COMANDOS ==="
+POD_NAME=$(kubectl get pods -l app=webapp -o jsonpath='{.items[0].metadata.name}')
+echo "Ejecutar comando en pod $POD_NAME:"
+kubectl exec $POD_NAME -- hostname
+kubectl exec $POD_NAME -- ps aux | head -5
+🔧 Edición y Actualización
+echo "🔧 === EDICIÓN DE RECURSOS ==="
+echo ""
+echo "Escalar deployment:"
+kubectl scale deployment webapp-deployment --replicas=2
+kubectl get deployments webapp-deployment
+echo "🏷️ === GESTIÓN DE LABELS ==="
+echo ""
+echo "Añadir label:"
+kubectl label deployment webapp-deployment environment=production
+echo ""
+echo "Ver labels:"
+kubectl get deployment webapp-deployment --show-labels
+echo ""
+echo "Eliminar label:"
+kubectl label deployment webapp-deployment environment-
+echo "🔄 === GESTIÓN DE ROLLOUTS ==="
+echo ""
+echo "Ver historial:"
+kubectl rollout history deployment/webapp-deployment
+echo ""
+echo "Ver estado:"
+kubectl rollout status deployment/webapp-deployment
+📂 Trabajar con Namespaces
+echo "📂 === GESTIÓN DE NAMESPACES ==="
+echo ""
+echo "Crear namespace:"
+kubectl create namespace desarrollo
+kubectl create namespace produccion
+echo "📋 === RECURSOS POR NAMESPACE ==="
+echo ""
+echo "Ver pods en namespace específico:"
+kubectl get pods -n kube-system | head -5
+echo ""
+echo "Ver todos los recursos en un namespace:"
+kubectl get all -n default
+echo "🎯 === CAMBIAR CONTEXTO ==="
+echo ""
+echo "Ver contexto actual:"
+kubectl config current-context
+echo ""
+echo "Ver configuración de namespace:"
+kubectl config view --minify | grep namespace || echo "Namespace por defecto: default"
+🔍 Técnicas Avanzadas de kubectl
+echo "🔍 === TÉCNICAS AVANZADAS ==="
+echo ""
+echo "Combinar comandos:"
+kubectl get pods -l app=webapp -o name | xargs kubectl describe
+echo "🎭 === ALIASES Y SHORTCUTS ==="
+echo ""
+echo "Crear aliases útiles:"
+alias k='kubectl'
+alias kgp='kubectl get pods'
+alias kgs='kubectl get services'
+alias kgd='kubectl get deployments'
+echo "Aliases creados (válidos para esta sesión)"
+echo "⏱️ === WATCH EN TIEMPO REAL ==="
+echo ""
+echo "Vigilar cambios (por 10 segundos):"
+timeout 10 kubectl get pods -l app=webapp -w || echo "Watch completado"
+🛠️ Utilidades y Herramientas
+echo "🛠️ === UTILIDADES ÚTILES ==="
+echo ""
+echo "Port forwarding:"
+kubectl port-forward service/webapp-service 8081:80 --address=0.0.0.0 &
+sleep 2
+curl -s http://localhost:8081 | head -3
+pkill -f "kubectl port-forward"
+echo "📊 === MÉTRICAS Y RECURSOS ==="
+echo ""
+echo "Top nodos (si está disponible):"
+kubectl top nodes 2>/dev/null || echo "Metrics server no disponible"
+echo ""
+echo "Top pods (si está disponible):"
+kubectl top pods 2>/dev/null || echo "Metrics server no disponible"
+echo "🔍 === INFORMACIÓN DEL API ==="
+echo ""
+echo "Versiones de API:"
+kubectl api-versions | head -10
+echo ""
+echo "Recursos disponibles:"
+kubectl api-resources | grep -E "(pods|services|deployments)"
+🧹 Limpieza Final
+echo "🧹 === LIMPIEZA DEL LABORATORIO ==="
+kubectl delete namespace desarrollo
+kubectl delete namespace produccion
+kubectl delete namespace mi-laboratorio
+echo "Namespaces de prueba eliminados"
+🎯 Comandos Esenciales - Referencia Rápida
+echo "📚 === KUBECTL CHEAT SHEET ==="
+echo ""
+echo "🔍 INFORMACIÓN:"
+echo "   kubectl get <resource>              # Listar recursos"
+echo "   kubectl describe <resource> <name>  # Detalles de recurso"
+echo "   kubectl logs <pod>                  # Ver logs"
+echo "   kubectl exec <pod> -- <command>     # Ejecutar comando"
+echo ""
+echo "📝 GESTIÓN:"
+echo "   kubectl create/apply -f file.yaml   # Crear/actualizar"
+echo "   kubectl delete <resource> <name>    # Eliminar"
+echo "   kubectl scale deployment <name> --replicas=N"
+echo ""
+echo "🔍 FILTROS:"
+echo "   kubectl get pods -l app=myapp       # Por label"
+echo "   kubectl get pods -o wide            # Salida amplia"
+echo "   kubectl get pods -n namespace       # Por namespace"
+echo ""
+echo "🛠️ UTILIDADES:"
+echo "   kubectl port-forward pod 8080:80    # Port forward"
+echo "   kubectl rollout status deployment   # Estado rollout"
+echo "   kubectl config current-context      # Contexto actual"
+echo ""
+echo "🎯 DEBUGGING:"
+echo "   kubectl describe pod <name>         # Debug pod"
+echo "   kubectl get events                  # Ver eventos"
+echo "   kubectl logs -f <pod>              # Logs en tiempo real"
+echo ""
+echo "🚀 ¡Ya dominas kubectl como un profesional!"
+¡Felicitaciones! Has completado el laboratorio de fundamentos de Kubernetes.
+
+
+/////////////////////////////////////////////////////////////////////////////
