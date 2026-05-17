@@ -741,4 +741,5 @@ echo "🚀 ¡Ya dominas kubectl como un profesional!"
 ¡Felicitaciones! Has completado el laboratorio de fundamentos de Kubernetes.
 
 
+
 /////////////////////////////////////////////////////////////////////////////
